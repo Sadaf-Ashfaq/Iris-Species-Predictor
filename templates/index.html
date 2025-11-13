@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Classifier</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(75, 0, 130, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, rgba(147, 51, 234, 0.15) 0%, transparent 50%);
+            animation: float 25s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .floating-flowers {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .flower {
+            position: absolute;
+            font-size: 2em;
+            opacity: 0.15;
+            animation: floatFlower 15s infinite ease-in-out;
+        }
+
+        .flower:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .flower:nth-child(2) {
+            top: 20%;
+            right: 15%;
+            animation-delay: 3s;
+        }
+
+        .flower:nth-child(3) {
+            bottom: 15%;
+            left: 20%;
+            animation-delay: 6s;
+        }
+
+        .flower:nth-child(4) {
+            bottom: 25%;
+            right: 10%;
+            animation-delay: 9s;
+        }
+
+        .flower:nth-child(5) {
+            top: 50%;
+            left: 5%;
+            animation-delay: 12s;
+        }
+
+        .flower:nth-child(6) {
+            top: 60%;
+            right: 8%;
+            animation-delay: 2s;
+        }
+
+        .flower:nth-child(7) {
+            top: 40%;
+            left: 50%;
+            animation-delay: 5s;
+        }
+
+        .flower:nth-child(8) {
+            top: 70%;
+            left: 30%;
+            animation-delay: 8s;
+        }
+
+        .flower:nth-child(9) {
+            top: 15%;
+            right: 30%;
+            animation-delay: 11s;
+        }
+
+        .flower:nth-child(10) {
+            bottom: 10%;
+            right: 40%;
+            animation-delay: 4s;
+        }
+
+        .flower:nth-child(11) {
+            top: 80%;
+            left: 60%;
+            animation-delay: 7s;
+        }
+
+        .flower:nth-child(12) {
+            top: 30%;
+            right: 25%;
+            animation-delay: 10s;
+        }
+
+        @keyframes floatFlower {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(180deg);
+            }
+        }
+
+        .main-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1300px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .left-section {
+            text-align: left;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .logo {
+            font-size: 4.5em;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 30px rgba(147, 51, 234, 0.6));
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 30px rgba(147, 51, 234, 0.6));
+            }
+            50% {
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 40px rgba(147, 51, 234, 0.8));
+            }
+        }
+
+        .left-section h1 {
+            font-size: 4em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            line-height: 1.2;
+            letter-spacing: -1px;
+        }
+
+        .left-section p {
+            font-size: 1.35em;
+            color: #b0b0c0;
+            line-height: 1.8;
+            margin-bottom: 35px;
+            font-weight: 400;
+        }
+
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.15em;
+            color: #d0d0e0;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.3s; }
+        .feature-item:nth-child(2) { animation-delay: 0.5s; }
+        .feature-item:nth-child(3) { animation-delay: 0.7s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            flex-shrink: 0;
+        }
+
+        .right-section {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+            padding: 45px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: slideInRight 0.8s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-title {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 35px;
+            text-align: center;
+            color: #f0f0f0;
+            letter-spacing: -0.5px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            margin-bottom: 22px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper label {
+            display: block;
+            font-size: 1em;
+            color: #c0c0d0;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: #f0f0f0;
+            font-size: 1.1em;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #707080;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.09);
+            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .range-info {
+            font-size: 0.85em;
+            color: #808090;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            margin-top: 35px;
+            padding: 35px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            display: none;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-title {
+            font-size: 2em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .result-subtitle {
+            text-align: center;
+            color: #b0b0c0;
+            margin-bottom: 30px;
+            line-height: 1.7;
+            font-size: 1.05em;
+        }
+
+        .confidence-section {
+            margin-bottom: 28px;
+        }
+
+        .confidence-label {
+            font-size: 1.05em;
+            color: #c0c0d0;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            border-radius: 7px;
+            transition: width 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .all-probabilities {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .prob-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            animation: slideInProb 0.4s ease-out backwards;
+        }
+
+        .prob-row:nth-child(1) { animation-delay: 0.1s; }
+        .prob-row:nth-child(2) { animation-delay: 0.2s; }
+        .prob-row:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes slideInProb {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .prob-row:hover {
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateX(5px);
+        }
+
+        .prob-name {
+            font-weight: 600;
+            text-transform: capitalize;
+            font-size: 1.05em;
+        }
+
+        .prob-percent {
+            font-weight: 700;
+            font-size: 1.25em;
+        }
+
+        .error-box {
+            margin-top: 25px;
+            padding: 18px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1.5px solid rgba(239, 68, 68, 0.35);
+            border-radius: 14px;
+            color: #fca5a5;
+            display: none;
+            text-align: center;
+            font-size: 1.05em;
+            font-weight: 500;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 968px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+
+            .left-section {
+                text-align: center;
+            }
+
+            .left-section h1 {
+                font-size: 3em;
+            }
+
+            .left-section p {
+                font-size: 1.2em;
+            }
+
+            .features {
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .left-section h1 {
+                font-size: 2.2em;
+            }
+
+            .left-section p {
+                font-size: 1.1em;
+            }
+
+            .right-section {
+                padding: 30px;
+            }
+
+            .logo {
+                font-size: 3.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-flowers">
+        <div class="flower">🌸</div>
+        <div class="flower">🌺</div>
+        <div class="flower">🌼</div>
+        <div class="flower">🌷</div>
+        <div class="flower">🌻</div>
+        <div class="flower">🌸</div>
+        <div class="flower">🌺</div>
+        <div class="flower">🌼</div>
+        <div class="flower">🌷</div>
+        <div class="flower">🌻</div>
+        <div class="flower">🌸</div>
+        <div class="flower">🌺</div>
+    </div>
+
+    <div class="main-container">
+        <div class="left-section">
+            <div class="logo">🌸</div>
+            <h1>Iris Species Classifier</h1>
+            <p>Identify iris flower species using advanced machine learning algorithms trained on botanical measurements.</p>
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>99% Accurate Predictions</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Instant Results</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Three Species Detection</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-section">
+            <h2 class="form-title">Enter Measurements</h2>
+            <form id="predictionForm">
+                <div class="input-row">
+                    <div class="input-wrapper">
+                        <label>Sepal Length</label>
+                        <input type="number" id="sepal_length" step="0.1" placeholder="5.1" required>
+                        <div class="range-info">Range: 4.3 - 7.9 cm</div>
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Sepal Width</label>
+                        <input type="number" id="sepal_width" step="0.1" placeholder="3.5" required>
+                        <div class="range-info">Range: 2.0 - 4.4 cm</div>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-wrapper">
+                        <label>Petal Length</label>
+                        <input type="number" id="petal_length" step="0.1" placeholder="1.4" required>
+                        <div class="range-info">Range: 1.0 - 6.9 cm</div>
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Petal Width</label>
+                        <input type="number" id="petal_width" step="0.1" placeholder="0.2" required>
+                        <div class="range-info">Range: 0.1 - 2.5 cm</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Classify Species</button>
+            </form>
+
+            <div class="error-box" id="errorBox"></div>
+
+            <div class="result-box" id="resultBox">
+                <h3 class="result-title" id="resultTitle"></h3>
+                <p class="result-subtitle" id="resultSubtitle"></p>
+
+                <div class="confidence-section">
+                    <div class="confidence-label">
+                        <span>Confidence</span>
+                        <span id="confidenceValue"></span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="all-probabilities" id="allProbabilities"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colors = {
+            setosa: '#a855f7',
+            versicolor: '#3b82f6',
+            virginica: '#ec4899'
+        };
+
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                sepal_length: document.getElementById('sepal_length').value,
+                sepal_width: document.getElementById('sepal_width').value,
+                petal_length: document.getElementById('petal_length').value,
+                petal_width: document.getElementById('petal_width').value
+            };
+
+            const errorBox = document.getElementById('errorBox');
+            const resultBox = document.getElementById('resultBox');
+            const submitBtn = document.querySelector('.submit-btn');
+
+            errorBox.style.display = 'none';
+            resultBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Analyzing...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+
+                document.getElementById('resultTitle').textContent = data.common_name;
+                document.getElementById('resultTitle').style.color = data.color;
+                document.getElementById('resultSubtitle').textContent = data.description;
+                document.getElementById('confidenceValue').textContent = data.confidence + '%';
+
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = '0%';
+                setTimeout(() => {
+                    progressFill.style.width = data.confidence + '%';
+                }, 100);
+
+                const allProbabilities = document.getElementById('allProbabilities');
+                allProbabilities.innerHTML = '';
+                
+                const sortedProbs = Object.entries(data.probabilities).sort((a, b) => b[1] - a[1]);
+                
+                sortedProbs.forEach(([species, prob]) => {
+                    const probRow = document.createElement('div');
+                    probRow.className = 'prob-row';
+                    probRow.style.borderLeftColor = colors[species];
+                    probRow.innerHTML = `
+                        <span class="prob-name">${species}</span>
+                        <span class="prob-percent" style="color: ${colors[species]}">${prob}%</span>
+                    `;
+                    allProbabilities.appendChild(probRow);
+                });
+
+                resultBox.style.display = 'block';
+
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Classify Species';
+            }
+        });
+    </script>
+</body>
+</html>
