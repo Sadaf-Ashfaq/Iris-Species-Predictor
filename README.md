@@ -1,0 +1,1 @@
+Predict the species of an Iris flower using sepal and petal measurements. The dataset is explored, visualized, and a simple classification model (e.g., Logistic Regression or Decision Tree) is trained to achieve accurate predictions.
